@@ -8,7 +8,7 @@ import datetime
 import numpy as np
 from binance.client import Client
 class BaseStrategy:
-    def __init__(self, data, fast_ema=50, slow_ema=180, atr=200, tp_factor=8, sl_factor=7):
+    def __init__(self, data:pd.DataFrame, fast_ema=50, slow_ema=180, atr=200, tp_factor=8, sl_factor=7):
         self.data = data
         self.fast_ema = fast_ema
         self.slow_ema = slow_ema
