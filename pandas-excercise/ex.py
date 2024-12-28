@@ -400,11 +400,28 @@
 
 ######################################################
 
-import pandas as pd
-import matplotlib.pyplot as plt
+# import pandas as pd
+# import matplotlib.pyplot as plt
 
-data_frame = pd.read_csv('data-for-plot.csv')
+# data_frame = pd.read_csv('data-for-plot.csv')
 
-data_frame['Duration'].plot(kind='hist')
+# data_frame['Duration'].plot(kind='hist')
 
-plt.show()
+# plt.show()
+
+#######################################################
+
+# import pandas as pd
+
+# data = pd.DataFrame({
+#     'A': [1, 2, 3],
+#     'B': [4, 5, 6],
+#     'C': [7, 8, 9]
+# })
+
+# print(data)
+# print(data.iloc[1])  
+# print(data.iloc[1,2])
+# print(data.iloc[0:2, 1:3])  
+
+#######################################################
