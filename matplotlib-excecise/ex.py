@@ -7,17 +7,21 @@
 # plt.show()
 
 # import Tkinter
-import pandas as pd
-import matplotlib.pyplot as plt
+# import pandas as pd
+# import matplotlib.pyplot as plt
 
+
+# import matplotlib
+# # matplotlib.use('TkAgg')
+
+# df = pd.read_csv('data.csv')
+
+
+# df.plot()
+
+
+# plt.show()
 
 import matplotlib
-# matplotlib.use('TkAgg')
 
-df = pd.read_csv('data.csv')
-
-
-df.plot()
-
-
-plt.show()
+print(matplotlib.__version__)
