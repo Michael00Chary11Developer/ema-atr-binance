@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-import ccxt
-import time
-import datetime
+# import ccxt
+# import time
+# import datetime
 import numpy as np
-from binance.client import Client
+# from binance.client import Client
 class BaseStrategy:
     def __init__(self, data, fast_ema=50, slow_ema=180, atr=200, tp_factor=8, sl_factor=7):
         self.data = data
@@ -19,6 +19,7 @@ class BaseStrategy:
         self.data['SlowEMA'] = self.data['Close'].ewm(span=self.slow_ema, adjust=False).mean()
         self.data['FastOffset'] = self.data['Close'].ewm(span=self.fast_ema, adjust=False).mean().shift(200)
         self.data['SlowOffset'] = self.data['Close'].ewm(span=self.slow_ema, adjust=False).mean().shift(100)
+        # self.data['Close'] = np.roll(self.data['Close'].values, -1)
         self.data['ATR'] = self.calculate_atr()
     def reverse_cross(self, current_index, lookback_period=90):
         if current_index < lookback_period:
@@ -29,30 +30,40 @@ class BaseStrategy:
                 return True
         return False
     def calculate_atr(self):
-        high_low = self.data['High'] - self.data['Low']
-        high_close = np.abs(self.data['High'] - self.data['Close'].shift(1))
-        low_close = np.abs(self.data['Low'] - self.data['Close'].shift(1))
-        tr = np.maximum(high_low, np.maximum(high_close, low_close))
-        atr_rma = [None for _ in range(self.atr_period)]
+        tr = []
+        for i in range(len(self.data['High'])):
+            if i == 0:
+                last_close = self.data['Close'].iloc[-1]
+                high_low = self.data['High'].iloc[i] - self.data['Low'].iloc[i]
+                high_close = abs(self.data['High'].iloc[i] - last_close)
+                low_close = abs(self.data['Low'].iloc[i] - last_close)
+                tr.append(max(high_low, high_close, low_close))
+                # tr.append(0)
+            else:
+                high_low = self.data['High'].iloc[i] - self.data['Low'].iloc[i]
+                high_close = abs(self.data['High'].iloc[i] - self.data['Close'].iloc[i - 1])
+                low_close = abs(self.data['Low'].iloc[i] - self.data['Close'].iloc[i - 1])
+                tr.append(max(high_low, high_close, low_close))
+            # print(tr[:5])
+        atr_rma = [None for _ in range(self.atr_period-1)]
         atr_rma.append(np.mean(tr[:self.atr_period]))
+        print(atr_rma[:200])
         alpha = 1.0 / self.atr_period
-        #print(len(atr_rma))
-        for i in range(self.atr_period + 1 , len(tr)):
-            atr_rma.append((1 - alpha) * atr_rma[i - 1] + alpha * tr.iloc[i])
-        # #print(len(atr_rma))
-        # #print(len(atr_rma))
-        # #print(atr_rma)
+        for i in range(self.atr_period, len(tr)):
+            atr_rma.append((1 - alpha) * atr_rma[i - 1] + alpha * tr[i])
         return pd.Series(atr_rma, index=self.data.index)
     def check_signals(self):
         signals = []
         position_active = False
+        test= not position_active
         entry_price = None
+        print(position_active)
+        print(test)
         for i in range(1, len(self.data)):
             current_row = self.data.iloc[i]
             previous_row = self.data.iloc[i - 1]
             atr_value = current_row['ATR']
-            #print(atr_value)
-            if position_active and previous_row['FastOffset'] > previous_row['SlowOffset'] and \
+            if not position_active and previous_row['FastOffset'] > previous_row['SlowOffset'] and \
                current_row['FastOffset'] <= current_row['SlowOffset']:
                 if self.reverse_cross(i, lookback_period=90):
                     if current_row['FastEMA'] < current_row['SlowEMA']:
@@ -65,7 +76,7 @@ class BaseStrategy:
                             'entry_price': entry_price,
                             'stop_loss': sl_price,
                             'take_profit': tp_price,
-                            'reason': 'EMA Cross with Reverse Cross in last 90 candles, FastEMA below SlowEMA with offset, FastEMA below SlowEMA without offset',
+                            'reason': 'EMA Cross',
                             'timestamp': current_row['Timestamp']
                         })
             if position_active:
@@ -94,12 +105,20 @@ class BaseStrategy:
                                             high=self.data['High'],
                                             low=self.data['Low'],
                                             close=self.data['Close'])])
-        fig.update_layout(
-            title='Bitcoin Price Candlestick Chart',
-            xaxis_title='Timestamp',
-            yaxis_title='Price',
-            xaxis_rangeslider_visible=False
-        )
+        if filename == "btcusdt_chart.png":
+            fig.update_layout(
+                title='BTC Candlestick Chart',
+                xaxis_title='Timestamp',
+                yaxis_title='Price',
+                xaxis_rangeslider_visible=False
+            )
+        elif filename == 'etcusdt_chart.png':
+            fig.update_layout(
+                title='ETH Candlestick Chart',
+                xaxis_title='Timestamp',
+                yaxis_title='Price',
+                xaxis_rangeslider_visible=False
+            )
         fig.add_trace(go.Scatter(x=self.data['Timestamp'], y=self.data['FastEMA'], mode='lines', name='50-period EMA', line=dict(color='blue', width=2)))
         fig.add_trace(go.Scatter(x=self.data['Timestamp'], y=self.data['SlowEMA'], mode='lines', name='180-period EMA', line=dict(color='red', width=2)))
         fig.add_trace(go.Scatter(x=self.data['Timestamp'], y=self.data['FastOffset'], mode='lines', name='50-period EMA(offset)', line=dict(color='green', width=2)))
@@ -122,8 +141,8 @@ class BaseStrategy:
         ))
         fig.write_image(filename)
         fig.show()
-def fetch_bitcoin_data():
-    df = pd.read_csv('BTCUSDT-5m.csv', usecols=[0, 1, 2, 3, 4, 5], names=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'], header=0)
+def fetch_data(filename):
+    df = pd.read_csv(filename, usecols=[0, 1, 2, 3, 4, 5], names=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms', errors='coerce')
     df['Open'] = pd.to_numeric(df['Open'], errors='coerce')
     df['High'] = pd.to_numeric(df['High'], errors='coerce')
@@ -131,13 +150,32 @@ def fetch_bitcoin_data():
     df['Close'] = pd.to_numeric(df['Close'], errors='coerce')
     df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
     df = df.dropna()
+    # print("DataFrame 1:")
+    # print(btc.head(2000))
+    # print("Columns:", btc.columns)
+    # print("\nDataFrame 2:")
+    # print(etc.head())
+    # print("Columns:", etc.columns)
     return df
-bitcoin_data = fetch_bitcoin_data()
+# data1
+bitcoin_data = fetch_data('BTCUSDT-5m.csv')
 bitcoin_data = bitcoin_data.tail(10000)
-strategy = BaseStrategy(bitcoin_data)
-signals = strategy.check_signals()
-signals_df = pd.DataFrame(signals)
-signals_df.to_csv('signals.csv', index=False)
-strategy.plot_signals(signals, filename="bitcoin_chart.png")
-#print("Signals saved to signals.csv")
-# strategy.calculate_atr()
+strategy_btc = BaseStrategy(bitcoin_data)
+signals_btc = strategy_btc.check_signals()
+signals_btc_df = pd.DataFrame(signals_btc)
+signals_btc_df['symbol'] = 'BTCUSDT'
+signals_btc_df.to_csv('signals_btcusdt_data.csv', index=False)
+# strategy_btc.plot_signals(signals_btc, filename="btcusdt_chart.png")
+# # data2
+# ethusdt_data = fetch_data('ETHUSDT-5m.csv')
+# ethusdt_data = ethusdt_data.tail(10000)
+# strategy_eth = BaseStrategy(ethusdt_data)
+# signals_eth = strategy_eth.check_signals()
+# signals_eth_df = pd.DataFrame(signals_eth)
+# signals_eth_df['symbol'] = 'ETHUSDT'
+# # signals_eth_df.to_csv('signals_etcusdt_data.csv', index=False)
+# strategy_eth.plot_signals(signals_eth, filename="etcusdt_chart.png")
+# signals_df = pd.concat([signals_btc_df, signals_eth_df], ignore_index=True)
+# signals_df = signals_df.sort_values(by='timestamp', ascending=True)
+# signals_df.to_csv('signals_data.csv', index=False)
+# print("Signals datas saved to signals_data.csv")

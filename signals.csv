@@ -1,7 +1,1 @@
-signal,entry_price,stop_loss,take_profit,reason,timestamp,exit_price,exit_reason
-Sell Entry,94781.4,95926.42196395042,93472.80346977095,"EMA Cross with Reverse Cross in last 90 candles, FastEMA below SlowEMA with offset, FastEMA below SlowEMA without offset",2024-12-03 11:40:00,,
-Sell Exit,,,,,2024-12-03 15:10:00,95926.42196395042,Stop Loss Triggered
-Sell Entry,99675.4,100878.32565868416,98300.62781864667,"EMA Cross with Reverse Cross in last 90 candles, FastEMA below SlowEMA with offset, FastEMA below SlowEMA without offset",2024-12-09 07:45:00,,
-Sell Exit,,,,,2024-12-09 11:25:00,98300.62781864667,Take Profit Triggered
-Sell Entry,95932.2,98111.63609780715,93441.4158882204,"EMA Cross with Reverse Cross in last 90 candles, FastEMA below SlowEMA with offset, FastEMA below SlowEMA without offset",2024-12-10 19:50:00,,
-Sell Exit,,,,,2024-12-11 08:35:00,98111.63609780715,Stop Loss Triggered
+
