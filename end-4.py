@@ -47,7 +47,7 @@ class BaseStrategy:
             # print(tr[:5])
         atr_rma = [None for _ in range(self.atr_period-1)]
         atr_rma.append(np.mean(tr[:self.atr_period]))
-        # print(atr_rma[:200])
+        print(atr_rma[:200])
         alpha = 1.0 / self.atr_period
         for i in range(self.atr_period, len(tr)):
             atr_rma.append((1 - alpha) * atr_rma[i - 1] + alpha * tr[i])
@@ -55,34 +55,28 @@ class BaseStrategy:
     def check_signals(self):
         signals = []
         position_active = False
-        test= not position_active
         entry_price = None
-        # print(position_active)
-        # print(test)
         for i in range(1, len(self.data)):
             current_row = self.data.iloc[i]
             previous_row = self.data.iloc[i - 1]
             atr_value = current_row['ATR']
-            if not position_active:
-                if previous_row['FastOffset'] > previous_row['SlowOffset'] and \
-                   current_row['FastOffset'] <= current_row['SlowOffset']:
-                    # print('vicorry',i)
-                    if self.reverse_cross(i, lookback_period=90):
-                        if current_row['FastEMA'] < current_row['SlowEMA']:
-                            entry_price = current_row['Close']
-                            sl_price = entry_price + (self.sl_factor * atr_value)
-                            tp_price = entry_price - (self.tp_factor * atr_value)
-                            position_active = True
-                            signals.append({
-                                'signal': 'Sell Entry',
-                                'entry_price': entry_price,
-                                'stop_loss': sl_price,
-                                'take_profit': tp_price,
-                                'reason': 'EMA Cross',
-                                'timestamp': current_row['Timestamp']
-                            })
+            if not position_active and previous_row['FastOffset'] > previous_row['SlowOffset'] and \
+               current_row['FastOffset'] <= current_row['SlowOffset']:
+                if self.reverse_cross(i, lookback_period=90):
+                    if current_row['FastEMA'] < current_row['SlowEMA']:
+                        entry_price = current_row['Close']
+                        sl_price = entry_price + (self.sl_factor * atr_value)
+                        tp_price = entry_price - (self.tp_factor * atr_value)
+                        position_active = True
+                        signals.append({
+                            'signal': 'Sell Entry',
+                            'entry_price': entry_price,
+                            'stop_loss': sl_price,
+                            'take_profit': tp_price,
+                            'reason': 'EMA Cross',
+                            'timestamp': current_row['Timestamp']
+                        })
             if position_active:
-                # print('vicrory',i)
                 if current_row['High'] >= sl_price:
                     signals.append({
                         'signal': 'Sell Exit',
@@ -167,18 +161,18 @@ strategy_btc = BaseStrategy(bitcoin_data)
 signals_btc = strategy_btc.check_signals()
 signals_btc_df = pd.DataFrame(signals_btc)
 signals_btc_df['symbol'] = 'BTCUSDT'
-signals_btc_df.to_csv('signals_btcusdt_data.csv', index=False)
+# signals_btc_df.to_csv('signals_btcusdt_data.csv', index=False)
 strategy_btc.plot_signals(signals_btc, filename="btcusdt_chart.png")
-# # data2
-# ethusdt_data = fetch_data('ETHUSDT-5m.csv')
-# ethusdt_data = ethusdt_data.tail(10000)
-# strategy_eth = BaseStrategy(ethusdt_data)
-# signals_eth = strategy_eth.check_signals()
-# signals_eth_df = pd.DataFrame(signals_eth)
-# signals_eth_df['symbol'] = 'ETHUSDT'
-# # signals_eth_df.to_csv('signals_etcusdt_data.csv', index=False)
-# strategy_eth.plot_signals(signals_eth, filename="etcusdt_chart.png")
-# signals_df = pd.concat([signals_btc_df, signals_eth_df], ignore_index=True)
-# signals_df = signals_df.sort_values(by='timestamp', ascending=True)
-# signals_df.to_csv('signals_data.csv', index=False)
-# print("Signals datas saved to signals_data.csv")
+# data2
+ethusdt_data = fetch_data('ETHUSDT-5m.csv')
+ethusdt_data = ethusdt_data.tail(10000)
+strategy_eth = BaseStrategy(ethusdt_data)
+signals_eth = strategy_eth.check_signals()
+signals_eth_df = pd.DataFrame(signals_eth)
+signals_eth_df['symbol'] = 'ETHUSDT'
+# signals_eth_df.to_csv('signals_etcusdt_data.csv', index=False)
+strategy_eth.plot_signals(signals_eth, filename="etcusdt_chart.png")
+signals_df = pd.concat([signals_btc_df, signals_eth_df], ignore_index=True)
+signals_df = signals_df.sort_values(by='timestamp', ascending=True)
+signals_df.to_csv('signals_data.csv', index=False)
+print("Signals datas saved to signals_data.csv")
